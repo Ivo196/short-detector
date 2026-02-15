@@ -16,16 +16,17 @@ def analyze_trend(data_string):
     {data_string}
     
     TAREA:
-    1. 💎 **ESTADO ACTUAL**: Bloque de código con Precio, RSI, MACD_Hist, ATR y EMAs (20, 50, 200).
-    2. 📈 **ANÁLISIS TÉCNICO**: 
+    1. 💎 <b>ESTADO ACTUAL</b>: Bloque de código con Precio, RSI, MACD_Hist, ATR y EMAs (20, 50, 200).
+    2. 📈 <b>ANÁLISIS TÉCNICO</b>: 
        - Comenta la posición del precio respecto a las Bandas de Bollinger (BB_High, BB_Low) y las EMAs.
        - Analiza la fuerza de la tendencia usando el MACD, el RSI y la relación entre las EMAs.
-    3. 🚨 **VEREDICTO**: SHORT, WAIT o LONG con justificación técnica.
-    4. 🛡️ **GESTIÓN DE RIESGO**: 
+    3. 🚨 <b>VEREDICTO</b>: SHORT, WAIT o LONG con justificación técnica.
+    4. 🛡️ <b>GESTIÓN DE RIESGO</b>: 
        - Sugiere un Stop Loss basado en el ATR (ej: Precio + 2*ATR para Shorts).
        - Sugiere un Take Profit usando el BB_Mid o BB_Low.
     
-    Usa Emojis y bloques de código para que el reporte sea visualmente impecable en Telegram.
+    Usa Emojis y etiquetas HTML permitidas por Telegram: <b>negrita</b>, <i>cursiva</i>, <code>code</code>, <pre>bloque de código</pre>.
+    NO uses Markdown (nada de ** o ```).
     """
     
     try:
