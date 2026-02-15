@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  short-detector:
+    build: .
+    container_name: short-detector
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    # command: python -m app.main
