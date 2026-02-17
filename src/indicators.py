@@ -43,12 +43,18 @@ def calculate_indicators(df):
         high=df['High'], low=df['Low'], close=df['Close'], window=14
     ).average_true_range()
 
-    # 5. EMAs (Exponential Moving Averages)
+    # 5. ADX (Average Directional Index)
+    adx = ta.trend.ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'])
+    df['ADX'] = adx.adx()
+    df['ADX+'] = adx.adx_pos() #+DI
+    df['ADX-'] = adx.adx_neg() #-DI
+
+    # 6. EMAs (Exponential Moving Averages)
     df['EMA_20'] = ta.trend.EMAIndicator(close=df['Close'], window=20).ema_indicator()
     df['EMA_50'] = ta.trend.EMAIndicator(close=df['Close'], window=50).ema_indicator()
     df['EMA_200'] = ta.trend.EMAIndicator(close=df['Close'], window=200).ema_indicator()
 
-    # 6. Limpiar filas con NaN (los primeros días no tienen suficiente historia)
+    # 7. Limpiar filas con NaN (los primeros días no tienen suficiente historia)
     df_clean = df.dropna()
 
     return df_clean

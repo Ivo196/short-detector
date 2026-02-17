@@ -1,62 +1,63 @@
 from openai import OpenAI
 from config import OPENAI_API_KEY
 
-# ============================================================
-# analysis.py — Análisis técnico de Ethereum con OpenAI
-# ============================================================
-
-# --- Validar API Key ---
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY not found in environment variables")
-
 client = OpenAI(api_key=OPENAI_API_KEY)
-
 
 def analyze_trend(data_string):
     """
-    Envía los datos formateados a OpenAI y devuelve un análisis
-    técnico completo de Ethereum para Telegram.
-
-    Args:
-        data_string: Tabla markdown con los indicadores de los últimos días.
-
-    Returns:
-        str: Texto del análisis generado por el LLM.
+    Analiza datos técnicos de Ethereum y genera un reporte HTML detallado.
     """
-    # 1. Construir el prompt con los datos
     prompt = f"""
-    Eres un Agente de Trading Pro de Ethereum. Analiza el siguiente set de datos técnicos:
-    
-    {data_string}
-    
+    Eres un Agente de Trading Pro de Ethereum. Tu objetivo es realizar un análisis técnico profundo basado en los siguientes datos de los últimos 7 días:
+
     TAREA:
-    1. 💎 <b>ESTADO ACTUAL</b>: Bloque de código con Precio, RSI, MACD_Hist, ATR y EMAs (20, 50, 200).
-    2. 📈 <b>ANÁLISIS TÉCNICO</b>: 
-       - Comenta la posición del precio respecto a las Bandas de Bollinger (BB_High, BB_Low) y las EMAs.
-       - Analiza la fuerza de la tendencia usando el MACD, el RSI y la relación entre las EMAs.
-    3. 🚨 <b>VEREDICTO</b>: SHORT, WAIT o LONG con justificación técnica.
-    4. 🛡️ <b>GESTIÓN DE RIESGO</b>: 
-       - Sugiere un Stop Loss basado en el ATR (ej: Precio + 2*ATR para Shorts).
-       - Sugiere un Take Profit usando el BB_Mid o BB_Low.
+    Genera un reporte técnico en HTML para Telegram. Debes NOMBRAR cada indicador y EXPLICAR el porqué de tu interpretación basándote en los valores actuales.
     
-    Usa Emojis y etiquetas HTML permitidas por Telegram: <b>negrita</b>, <i>cursiva</i>, <code>code</code>, <pre>bloque de código</pre>.
-    NO uses Markdown (nada de ** o ```).
+    PASO 1: Usa la herramienta de búsqueda web para encontrar las 5 noticias más relevantes de Ethereum de HOY.
+    PASO 2: Analiza estos datos técnicos de los últimos 7 días:
+
+    {data_string}
+
+    ESTRUCTURA DEL REPORTE:
+
+    1. 💎 <b>ESTADO ACTUAL (Métricas Clave)</b>
+    Usa una etiqueta <pre> para mostrar: Precio, RSI, MACD_Line, MACD_Hist, ATR y ADX. 
+    (Alinea los valores para que parezca una terminal financiera).
+
+    2. 📉 <b>ANÁLISIS TÉCNICO DETALLADO</b>
+    • <b>Tendencia y Fuerza (ADX + EMAs):</b> Analiza la relación entre EMA_20, 50 y 200. Usa el ADX para decir si la tendencia tiene fuerza o es lateral.
+    • <b>Momentum (RSI + MACD):</b> Explica el valor del RSI. ¿Está subiendo desde sobreventa o bajando desde sobrecompra? Usa el MACD_Hist para confirmar si el momentum está acelerando o frenando.
+    • <b>Volatilidad (Bollinger + ATR):</b> Comenta la posición del precio respecto a BB_High, BB_Mid y BB_Low. Explica qué nos dice el ATR sobre la volatilidad actual del mercado.
+
+    3. 🚨 <b>VEREDICTO: [LONG 🟢 | SHORT 🔴 | WAIT 🟡]</b>
+    Justifica tu decisión uniendo al menos tres indicadores de los anteriores. Por qué este es el momento (o por qué no lo es).
+
+    4. 📰 <b>NOTICIAS DEL DÍA</b>: No me des las noticas, solo un mini resumen de que se habla en general.
+
+
+    REGLAS DE FORMATO:
+    - NO uses Markdown.
+    - Usa etiquetas HTML: <b>, <i>, <code>, <pre>.
+    - Sé técnico, directo y usa emojis financieros.
+    - Longitud total: máximo 2200 caracteres.
+    - Máximo 6 bullets en todo el reporte.
+    - NOTICIAS: 2 bullets de 1 línea cada uno. Sin URLs, sin nombres de medios, sin “Fuentes”.
+    - No incluyas secciones adicionales.
     """
 
-    # 2. Enviar al modelo
     try:
-        print("Sending request to OpenAI...")
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Eres un analista financiero senior. Tu estilo es visual, técnico y directo."},
-                {"role": "user", "content": prompt}
+        response = client.responses.create(
+            model="gpt-5-nano-2025-08-07",
+            reasoning={"effort": "low"},  # evita “minimal reasoning”
+            tools=[{"type": "web_search"}],
+            tool_choice="required",          
+            include=["web_search_call.action.sources"],
+            input=[
+                {"role": "system", "content": "Eres un analista financiero senior."},
+                {"role": "user", "content": prompt},
             ],
-            temperature=0.2
+            max_output_tokens=550
         )
-        print("Received response from OpenAI.")
-        return response.choices[0].message.content
-
+        return response.output_text
     except Exception as e:
-        print(f"Error in analyze_trend: {e}")
-        return f"❌ Error al procesar datos con OpenAI: {e}"
+        return f"❌ <b>Error técnico:</b> <code>{e}</code>"

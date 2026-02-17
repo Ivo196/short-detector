@@ -25,7 +25,7 @@ def download_raw_data():
 
     # 2. Descargar datos con yfinance
     print(f"Downloading data for {TICKER}...")
-    df_raw = yf.download(TICKER, period="max", interval=INTERVAL, multi_level_index=False)
+    df_raw = yf.download(TICKER, period="400d", interval=INTERVAL, multi_level_index=False, auto_adjust=False)
 
     if df_raw.empty:
         raise Exception("No data downloaded from Yahoo Finance")

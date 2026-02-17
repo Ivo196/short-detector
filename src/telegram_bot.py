@@ -1,5 +1,7 @@
 import time
 import requests
+import html
+import re
 
 from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
 from data_download import download_raw_data
@@ -11,43 +13,59 @@ from analysis import analyze_trend
 # telegram_bot.py — Bot de Telegram para análisis de Ethereum
 # ============================================================
 
+MAX_LEN = 3800
+_ALLOWED = {"b", "/b", "i", "/i", "code", "/code", "pre", "/pre"}
+
+def sanitize_telegram_html(s: str) -> str:
+    # Escapa TODO (esto convierte <script> en &lt;script&gt;)
+    s = html.escape(s)
+
+    # Re-habilita SOLO tags permitidos
+    def unesc(m):
+        tag = m.group(1).lower()
+        return f"<{tag}>" if tag in _ALLOWED else m.group(0)
+
+    s = re.sub(r"&lt;(/?b|/?i|/?code|/?pre)&gt;", unesc, s, flags=re.I)
+    return s
+def split_msg(text: str, max_len: int = MAX_LEN):
+    parts = []
+    while len(text) > max_len:
+        cut = text.rfind("\n", 0, max_len)
+        if cut == -1:
+            cut = max_len
+        parts.append(text[:cut])
+        text = text[cut:].lstrip()
+    if text:
+        parts.append(text)
+    return parts
 
 def send_message(text, chat_id=None):
-    """
-    Envía un mensaje por Telegram al chat indicado.
-
-    Args:
-        text: Texto del mensaje (soporta HTML).
-        chat_id: ID del chat destino. Si no se pasa, usa TELEGRAM_CHAT_ID.
-    """
-    if not TELEGRAM_TOKEN:
-        print("Telegram configuration missing.")
-        return
-
     target_chat_id = chat_id or TELEGRAM_CHAT_ID
-    if not target_chat_id:
-        print("No chat_id provided and TELEGRAM_CHAT_ID not set.")
-        return
-
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
 
-    try:
-        # 1. Intentar enviar con formato HTML
-        response = requests.post(url, data={"chat_id": target_chat_id, "text": text, "parse_mode": "HTML"})
+    safe = sanitize_telegram_html(str(text))
+    chunks = split_msg(safe)
 
-        if response.status_code != 200:
-            print(f"Error sending message: {response.status_code} - {response.text}")
+    for chunk in chunks:
+        resp = requests.post(url, data={
+            "chat_id": target_chat_id,
+            "text": chunk,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        })
 
-            # 2. Si falla el HTML (error 400), reintentar como texto plano
-            if response.status_code == 400:
-                print("Retrying as plain text...")
-                retry_resp = requests.post(url, data={"chat_id": target_chat_id, "text": text})
-                if retry_resp.status_code != 200:
-                    print(f"Retry failed: {retry_resp.status_code} - {retry_resp.text}")
-                else:
-                    print("Retry success.")
-    except Exception as e:
-        print(f"Error sending message exception: {e}")
+        if resp.status_code != 200:
+            print(f"Error sending message: {resp.status_code} - {resp.text}")
+            # fallback: texto plano (igual va en chunks)
+            retry = requests.post(url, data={
+                "chat_id": target_chat_id,
+                "text": chunk,
+                "disable_web_page_preview": True
+            })
+            if retry.status_code != 200:
+                print(f"Retry failed: {retry.status_code} - {retry.text}")
+            else:
+                print("Retry success.")
 
 
 def handle_update(texto_usuario, chat_id):
@@ -70,12 +88,13 @@ def handle_update(texto_usuario, chat_id):
             update_indicators(df_raw)
 
             # 3. Formatear datos para el LLM
-            send_message("📊 Analizando indicadores de Ethereum...", chat_id)
+            send_message("📊 Calculando indicadores...", chat_id)
             print("Starting analysis flow...")
             data = load_and_format_data()
 
             # 4. Enviar al LLM y obtener análisis
             print("Data loaded. Starting analysis...")
+            send_message("🧠 Analizando con IA...", chat_id)
             resultado = analyze_trend(data)
 
             # 5. Enviar resultado al usuario
@@ -97,7 +116,7 @@ def run_bot():
         print("Error: TELEGRAM_TOKEN not found.")
         return
 
-    print(f"🤖 Bot activo. Token: {TELEGRAM_TOKEN[:5]}...")
+    print("🤖 Bot activo...")
     print("Escríbele /analisis")
 
     last_update_id = 0
