@@ -1,6 +1,10 @@
 import os
 from dotenv import load_dotenv
 
+# ============================================================
+# config.py — Variables de entorno
+# ============================================================
+
 # Load environment variables
 load_dotenv(override=True)
 

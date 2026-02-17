@@ -16,5 +16,5 @@ COPY . .
 # Define environment variable
 # ENV NAME World
 
-# Run app.main when the container launches
-CMD ["python", "-u", "-m", "app.main"]
+# Run main.py when the container launches
+CMD ["python", "-u", "main.py"]

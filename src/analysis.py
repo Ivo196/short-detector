@@ -1,15 +1,29 @@
 from openai import OpenAI
-from app.config import OPENAI_API_KEY
+from config import OPENAI_API_KEY
 
+# ============================================================
+# analysis.py — Análisis técnico de Ethereum con OpenAI
+# ============================================================
+
+# --- Validar API Key ---
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY not found in environment variables")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+
 def analyze_trend(data_string):
     """
-    Sends the formatted data to OpenAI for analysis.
+    Envía los datos formateados a OpenAI y devuelve un análisis
+    técnico completo de Ethereum para Telegram.
+
+    Args:
+        data_string: Tabla markdown con los indicadores de los últimos días.
+
+    Returns:
+        str: Texto del análisis generado por el LLM.
     """
+    # 1. Construir el prompt con los datos
     prompt = f"""
     Eres un Agente de Trading Pro de Ethereum. Analiza el siguiente set de datos técnicos:
     
@@ -28,7 +42,8 @@ def analyze_trend(data_string):
     Usa Emojis y etiquetas HTML permitidas por Telegram: <b>negrita</b>, <i>cursiva</i>, <code>code</code>, <pre>bloque de código</pre>.
     NO uses Markdown (nada de ** o ```).
     """
-    
+
+    # 2. Enviar al modelo
     try:
         print("Sending request to OpenAI...")
         response = client.chat.completions.create(
@@ -41,6 +56,7 @@ def analyze_trend(data_string):
         )
         print("Received response from OpenAI.")
         return response.choices[0].message.content
+
     except Exception as e:
         print(f"Error in analyze_trend: {e}")
         return f"❌ Error al procesar datos con OpenAI: {e}"
